@@ -1,0 +1,70 @@
+/* ─── Control Panel ─────────────────────────────────────────── */
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-section {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.object-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* ─── Simulation Controls ───────────────────────────────────── */
+
+.sim-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-play {
+  flex: 1;
+}
+
+/* ─── Add Button ────────────────────────────────────────────── */
+
+.btn-add {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ─── Objects List ──────────────────────────────────────────── */
+
+.objects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+}

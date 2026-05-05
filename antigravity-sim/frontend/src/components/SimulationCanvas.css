@@ -1,0 +1,34 @@
+/* ─── Canvas Container ──────────────────────────────────────── */
+
+.canvas-container {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 3px;
+  position: relative;
+}
+
+.simulation-canvas {
+  display: block;
+  border-radius: calc(var(--radius-lg) - 3px);
+  cursor: crosshair;
+}
+
+.canvas-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.canvas-info .running {
+  color: var(--accent-emerald);
+}
+
+.canvas-info .paused {
+  color: var(--accent-amber);
+}
