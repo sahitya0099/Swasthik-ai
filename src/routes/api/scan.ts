@@ -51,58 +51,63 @@ function denoise(input: string): string {
     "lettuce", "tomato", "cherry tomatoes", "cucumber", "red onion", "bell pepper", "olive oil",
     "citric acid", "phosphoric acid", "caramel color", "natural flavors", "caffeine", "potassium sorbate", "sodium benzoate",
     "vinegar", "lemon juice", "garlic", "onions", "pepper", "oregano", "basil", "extract", "yeast",
-    "oreo cookie crumbs", "cheesecake", "whipped cream", "chocolate sauce", "filling", "cream", "milk", "wheat", "flour"
+    "oreo cookie crumbs", "cheesecake", "whipped cream", "chocolate sauce", "filling", "cream", "milk", "wheat", "flour",
+    "cocoa", "soy lecithin", "vanilla", "butter", "egg", "syrup", "honey", "starch"
   ];
 
   const blocks = input.split(/[,;\n\r]/);
-  const results = new Set<string>();
+  const finalIngredients = new Set<string>();
 
   for (let block of blocks) {
-    // 1. Aggressive Noise Stripping
-    const clean = block.replace(/[^a-zA-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+    // 1. Heavy Cleaning: Keep only letters and spaces
+    const clean = block.replace(/[^a-zA-Z ]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
     if (clean.length < 3) continue;
 
-    // 2. High-Confidence Dictionary Matching
-    let bestMatch = "";
-    let maxOverlap = 0;
-
+    let confirmedMatch = "";
+    
+    // 2. Strict Whitelist Check
+    // We only accept the block if it contains a known ingredient or is a very high-quality word list
     for (const item of dictionary) {
       if (clean.includes(item)) {
-        if (item.length > maxOverlap) {
-          bestMatch = item;
-          maxOverlap = item.length;
-        }
+        confirmedMatch = capitalize(item);
+        break; 
       }
     }
 
-    if (bestMatch && maxOverlap >= 4) {
-      results.add(capitalize(bestMatch));
+    if (confirmedMatch) {
+      finalIngredients.add(confirmedMatch);
     } else {
-      // 3. Stricter Heuristic for "Unknown" but potentially valid text
+      // 3. Ultra-Strict Linguistic Filter for "New" Ingredients
+      // Only keep if it's purely alphabetic, has no single letters, and has a perfect vowel ratio
       const words = clean.split(" ").filter(w => w.length > 2);
-      const letterCount = (clean.match(/[a-zA-Z]/g) || []).length;
-      const spaceCount = (clean.match(/\s/g) || []).length;
+      const isPurelyAlpha = /^[a-z ]+$/.test(clean);
+      const letterCount = clean.replace(/\s/g, "").length;
       
-      // If it has too many spaces relative to letters, it's probably noise like "G at m ree ry she"
-      const noiseRatio = spaceCount / (letterCount + 1);
-      
-      if (letterCount > 5 && noiseRatio < 0.35 && clean.length < 40) {
-        // Vowel density check (real words usually have 20-50% vowels)
+      if (isPurelyAlpha && words.length > 0 && letterCount > 4) {
         const vowels = (clean.match(/[aeiouy]/g) || []).length;
         const vowelRatio = vowels / letterCount;
         
-        if (vowelRatio > 0.25 && vowelRatio < 0.6) {
-          results.add(capitalize(clean));
+        // Very strict vowel ratio for English words (30% to 50%)
+        // Also ensure words don't have too many repeating characters (junk check)
+        const hasRepeatingJunk = /(.)\1\1/.test(clean); 
+        
+        if (vowelRatio >= 0.3 && vowelRatio <= 0.5 && !hasRepeatingJunk) {
+          // One final check: does it look like a real ingredient or just a fragment?
+          // If it has too many words but is short, it's likely junk like "Ar cece on"
+          const avgWordLen = letterCount / words.length;
+          if (avgWordLen >= 4) {
+            finalIngredients.add(capitalize(clean));
+          }
         }
       }
     }
   }
 
-  // 4. Final Substring Deduplication (e.g. keep "Oreo cookie crumbs" over "Oreo")
-  const finalArray = Array.from(results).sort((a, b) => b.length - a.length);
+  // 4. Substring cleanup (e.g. keep "Oreo cookie crumbs" over "Oreo")
+  const resultsArray = Array.from(finalIngredients).sort((a, b) => b.length - a.length);
   const deduplicated = new Set<string>();
   
-  for (const item of finalArray) {
+  for (const item of resultsArray) {
     let isSubset = false;
     for (const existing of deduplicated) {
       if (existing.toLowerCase().includes(item.toLowerCase())) {
