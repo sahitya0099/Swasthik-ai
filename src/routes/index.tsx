@@ -129,8 +129,8 @@ function Landing() {
               style={{ animationDelay: "0.4s" }}
             >
               {[
-                { v: "50K+", l: "products analyzed" },
-                { v: "98%", l: "accuracy" },
+                { v: "5K+", l: "products analyzed" },
+                { v: "85%", l: "accuracy" },
                 { v: "3s", l: "avg. analysis" },
               ].map((s, i) => (
                 <div key={i}>
