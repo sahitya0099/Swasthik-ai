@@ -76,7 +76,6 @@ function AnalyzePage() {
   const handleFile = (f: File) => {
     const url = URL.createObjectURL(f);
     setImageUrl(url);
-    if (!text) setText("Sugar, palm oil, wheat flour, salt, milk solids, artificial flavor");
   };
 
   const onAnalyze = async () => {
