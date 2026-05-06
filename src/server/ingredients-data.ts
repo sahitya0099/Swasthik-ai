@@ -47,6 +47,18 @@ export const INGREDIENT_DB: IngredientInfo[] = [
   { name: "tomato", category: "good", healthEffect: "Rich in lycopene, an antioxidant linked to heart health.", riskLevel: "low", aliases: ["tomatoes"] },
   { name: "carbonated water", category: "good", healthEffect: "Sparkling water; a better alternative to sugary sodas.", riskLevel: "low", aliases: ["sparkling water", "soda water"] },
 
+  // Salad & Fresh Produce
+  { name: "lettuce", category: "good", healthEffect: "Crisp leafy green, high in water content and low in calories.", riskLevel: "low" },
+  { name: "cucumber", category: "good", healthEffect: "Hydrating vegetable with vitamins K and C.", riskLevel: "low", aliases: ["cucumbers"] },
+  { name: "red onion", category: "good", healthEffect: "Contains quercetin, an antioxidant that helps lower blood pressure.", riskLevel: "low", aliases: ["onions", "onion"] },
+  { name: "yellow bell pepper", category: "good", healthEffect: "Excellent source of vitamin C and carotenoids.", riskLevel: "low" },
+  { name: "red bell pepper", category: "good", healthEffect: "Contains more than 200% of your daily vitamin C intake.", riskLevel: "low" },
+  { name: "feta cheese", category: "moderate", healthEffect: "Brined curd cheese; good protein source but high in sodium and saturated fat.", riskLevel: "medium", riskFlag: "High sodium" },
+  { name: "black olives", category: "moderate", healthEffect: "Rich in vitamin E and antioxidants; high in healthy fats but also sodium.", riskLevel: "medium", riskFlag: "High sodium", aliases: ["olives"] },
+  { name: "avocado", category: "good", healthEffect: "Rich in heart-healthy monounsaturated fats and potassium.", riskLevel: "low" },
+  { name: "garlic", category: "good", healthEffect: "Known for its anti-inflammatory and immune-boosting properties.", riskLevel: "low" },
+  { name: "lemon juice", category: "good", healthEffect: "High in vitamin C and supports digestion.", riskLevel: "low" },
+
   // New Additions for Beverages & Snacks
   { name: "phosphoric acid", category: "harmful", healthEffect: "Can erode tooth enamel and may affect bone density over time.", riskLevel: "high", riskFlag: "Contains phosphoric acid" },
   { name: "caramel color", category: "harmful", healthEffect: "Certain types (E150d) are linked to potential carcinogens like 4-MEI.", riskLevel: "medium", riskFlag: "Caramel color (E150d)", aliases: ["caramel colour", "e150d"] },
