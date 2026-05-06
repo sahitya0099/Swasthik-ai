@@ -13,6 +13,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
+import { Route as ApiScanRouteImport } from './routes/api/scan'
 import { Route as ApiAnalyzeRouteImport } from './routes/api/analyze'
 
 const DashboardRoute = DashboardRouteImport.update({
@@ -35,6 +36,11 @@ const ResultsIdRoute = ResultsIdRouteImport.update({
   path: '/results/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiScanRoute = ApiScanRouteImport.update({
+  id: '/api/scan',
+  path: '/api/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnalyzeRoute = ApiAnalyzeRouteImport.update({
   id: '/api/analyze',
   path: '/api/analyze',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/analyze': typeof AnalyzeRoute
   '/dashboard': typeof DashboardRoute
   '/api/analyze': typeof ApiAnalyzeRoute
+  '/api/scan': typeof ApiScanRoute
   '/results/$id': typeof ResultsIdRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/analyze': typeof AnalyzeRoute
   '/dashboard': typeof DashboardRoute
   '/api/analyze': typeof ApiAnalyzeRoute
+  '/api/scan': typeof ApiScanRoute
   '/results/$id': typeof ResultsIdRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/analyze': typeof AnalyzeRoute
   '/dashboard': typeof DashboardRoute
   '/api/analyze': typeof ApiAnalyzeRoute
+  '/api/scan': typeof ApiScanRoute
   '/results/$id': typeof ResultsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analyze' | '/dashboard' | '/api/analyze' | '/results/$id'
+  fullPaths:
+    | '/'
+    | '/analyze'
+    | '/dashboard'
+    | '/api/analyze'
+    | '/api/scan'
+    | '/results/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analyze' | '/dashboard' | '/api/analyze' | '/results/$id'
+  to:
+    | '/'
+    | '/analyze'
+    | '/dashboard'
+    | '/api/analyze'
+    | '/api/scan'
+    | '/results/$id'
   id:
     | '__root__'
     | '/'
     | '/analyze'
     | '/dashboard'
     | '/api/analyze'
+    | '/api/scan'
     | '/results/$id'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   AnalyzeRoute: typeof AnalyzeRoute
   DashboardRoute: typeof DashboardRoute
   ApiAnalyzeRoute: typeof ApiAnalyzeRoute
+  ApiScanRoute: typeof ApiScanRoute
   ResultsIdRoute: typeof ResultsIdRoute
 }
 
@@ -115,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/scan': {
+      id: '/api/scan'
+      path: '/api/scan'
+      fullPath: '/api/scan'
+      preLoaderRoute: typeof ApiScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/analyze': {
       id: '/api/analyze'
       path: '/api/analyze'
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyzeRoute: AnalyzeRoute,
   DashboardRoute: DashboardRoute,
   ApiAnalyzeRoute: ApiAnalyzeRoute,
+  ApiScanRoute: ApiScanRoute,
   ResultsIdRoute: ResultsIdRoute,
 }
 export const routeTree = rootRouteImport

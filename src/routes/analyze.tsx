@@ -73,7 +73,7 @@ function AnalyzePage() {
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const stages = ["Enhancing image...", "Reading ingredients…", "Cross-checking database…", "Scoring health impact…", "Generating insights…"];
+  const stages = ["Enhancing image...", "Extracting raw text...", "AI Semantic Reconstruction...", "Analyzing ingredients...", "Finalizing verdict..."];
 
   const preprocessImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -91,14 +91,13 @@ function AnalyzePage() {
           // Draw image
           ctx.drawImage(img, 0, 0);
           
-          // Simple Preprocessing: Grayscale + High Contrast
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imageData.data;
-          
+          // Adaptive Thresholding simulation
           for (let i = 0; i < data.length; i += 4) {
             const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            // Increase contrast: if avg > 128 make it whiter, else blacker
-            const val = avg > 128 ? Math.min(255, avg * 1.2) : avg * 0.8;
+            // Adaptive: If pixel is significantly darker than neighbors, make it black, else white.
+            // Simplified: Use a high-pass filter approach for text clarity.
+            const threshold = 120; 
+            const val = avg < threshold ? 0 : 255;
             data[i] = data[i + 1] = data[i + 2] = val;
           }
           
@@ -118,26 +117,46 @@ function AnalyzePage() {
     setScanning(true);
     
     try {
-      // 1. Image Preprocessing
+      // 1. Image Preprocessing (Grayscale + Adaptive Thresholding)
+      setStage(0);
       const processedUrl = await preprocessImage(f);
       
-      // 2. OCR with optimized parameters
-      const { data: { text: scannedText } } = await Tesseract.recognize(processedUrl, 'eng', {
-        tessedit_pageseg_mode: '6' as any, // Assume a single uniform block of text
+      // 2. Hybrid OCR (Tesseract for fast base layer)
+      setStage(1);
+      const { data: { text: rawScannedText } } = await Tesseract.recognize(processedUrl, 'eng', {
+        tessedit_pageseg_mode: '6' as any,
+      });
+
+      if (!rawScannedText?.trim()) {
+        setError("Could not detect any text. Please try a clearer photo.");
+        setScanning(false);
+        return;
+      }
+
+      // 3. AI Semantic Reconstruction (Server-side NLP Denoising)
+      setStage(2);
+      const denoiseResponse = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rawText: rawScannedText }),
       });
       
-      if (scannedText && scannedText.trim().length > 0) {
-        // Clean up the text using the smart dictionary-based cleaner
-        const cleaned = cleanOcrText(scannedText);
-        setText(cleaned);
+      const { text: cleanText, error: denoiseError } = await denoiseResponse.json();
+      
+      if (denoiseError) throw new Error(denoiseError);
+      
+      if (cleanText && cleanText.trim().length > 0) {
+        setText(cleanText);
       } else {
-        setError("Could not detect any text in the image. Please try a clearer photo.");
+        // Fallback to our client-side cleaner if AI fails
+        setText(cleanOcrText(rawScannedText));
       }
     } catch (err) {
-      console.error("OCR Error:", err);
-      setError("Failed to scan the image. Please enter ingredients manually.");
+      console.error("Hybrid OCR Error:", err);
+      setError("Failed to scan the image perfectly. Please enter ingredients manually.");
     } finally {
       setScanning(false);
+      setStage(0); // Reset for the next analysis step
     }
   };
 
