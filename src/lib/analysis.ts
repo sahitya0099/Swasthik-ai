@@ -140,29 +140,43 @@ export function cleanOcrText(raw: string): string {
   const dictionary = [
     ...HARMFUL.map(h => h.key),
     ...HEALTHY.map(h => h.key),
-    "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper"
+    "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper",
+    "vinegar", "lemon juice", "water", "oil", "syrup", "extract"
   ];
   
-  const text = raw.toLowerCase();
-  const found = new Set<string>();
+  const rawBlocks = raw.split(/[,;\n\r]/);
+  const finalIngredients = new Set<string>();
   
-  // Look for dictionary matches in the raw text
-  for (const item of dictionary) {
-    if (text.includes(item)) {
-      found.add(capitalize(item));
+  for (let block of rawBlocks) {
+    // 1. Basic cleanup: remove symbols and extra whitespace
+    let clean = block.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    if (clean.length < 2) continue;
+
+    // 2. Try dictionary matching (fuzzy-ish)
+    const lowerClean = clean.toLowerCase();
+    let matched = false;
+    
+    for (const item of dictionary) {
+      if (lowerClean.includes(item)) {
+        finalIngredients.add(capitalize(item));
+        matched = true;
+        // We don't break because one block might have multiple (e.g. "Salt and Sugar")
+      }
+    }
+    
+    // 3. If no dictionary match, but it looks like a valid word, keep it
+    if (!matched) {
+      // Avoid purely numeric blocks or random junk
+      const letterCount = (clean.match(/[a-zA-Z]/g) || []).length;
+      if (letterCount > 3 && clean.length < 30) {
+        finalIngredients.add(capitalize(lowerClean));
+      }
     }
   }
   
-  // If no dictionary matches, try to filter the raw text by removing non-alphabetic noise
-  if (found.size === 0) {
-    return raw
-      .split(/[,;\n]/)
-      .map(s => s.replace(/[^a-zA-Z ]/g, "").trim())
-      .filter(s => s.length > 2)
-      .join(", ");
-  }
+  if (finalIngredients.size === 0) return raw.trim();
   
-  return Array.from(found).join(", ");
+  return Array.from(finalIngredients).join(", ");
 }
 
 const STORAGE_KEY = "swasthik:history";
