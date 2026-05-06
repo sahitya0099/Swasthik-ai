@@ -141,42 +141,67 @@ export function cleanOcrText(raw: string): string {
     ...HARMFUL.map(h => h.key),
     ...HEALTHY.map(h => h.key),
     "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper",
-    "vinegar", "lemon juice", "water", "oil", "syrup", "extract"
+    "vinegar", "lemon juice", "water", "oil", "syrup", "extract", "phosphoric acid", "caramel color", "citric acid", "natural flavors"
   ];
   
   const rawBlocks = raw.split(/[,;\n\r]/);
-  const finalIngredients = new Set<string>();
+  const foundIngredients: string[] = [];
   
   for (let block of rawBlocks) {
     // 1. Basic cleanup: remove symbols and extra whitespace
-    let clean = block.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    let clean = block.replace(/[^a-zA-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     if (clean.length < 2) continue;
 
-    // 2. Try dictionary matching (fuzzy-ish)
     const lowerClean = clean.toLowerCase();
-    let matched = false;
+    let matchesForThisBlock: string[] = [];
     
+    // 2. Dictionary matching
     for (const item of dictionary) {
       if (lowerClean.includes(item)) {
-        finalIngredients.add(capitalize(item));
-        matched = true;
-        // We don't break because one block might have multiple (e.g. "Salt and Sugar")
+        matchesForThisBlock.push(capitalize(item));
       }
     }
     
-    // 3. If no dictionary match, but it looks like a valid word, keep it
-    if (!matched) {
-      // Avoid purely numeric blocks or random junk
+    if (matchesForThisBlock.length > 0) {
+      // Sort by length descending and only keep the longest match to avoid "Syrup" when "Corn Syrup" is present
+      matchesForThisBlock.sort((a, b) => b.length - a.length);
+      foundIngredients.push(matchesForThisBlock[0]);
+    } else {
+      // 3. Heuristic for unknown ingredients
+      // Must have at least 3 letters, at least one vowel, and not be just a string of single letters
+      const words = clean.split(" ").filter(w => w.length > 1);
+      const hasVowel = /[aeiouy]/i.test(clean);
       const letterCount = (clean.match(/[a-zA-Z]/g) || []).length;
-      if (letterCount > 3 && clean.length < 30) {
-        finalIngredients.add(capitalize(lowerClean));
+      
+      if (letterCount > 3 && hasVowel && words.length > 0 && clean.length < 40) {
+        // Additional check: is it just junk like "nb foi"?
+        const avgWordLen = letterCount / words.length;
+        if (avgWordLen > 2.5) {
+          foundIngredients.push(capitalize(lowerClean));
+        }
       }
     }
   }
   
-  if (finalIngredients.size === 0) return raw.trim();
+  // 4. Final deduplication across all blocks
+  const finalSet = new Set<string>();
+  const sorted = foundIngredients.sort((a, b) => b.length - a.length);
   
-  return Array.from(finalIngredients).join(", ");
+  for (const ing of sorted) {
+    const lowerIng = ing.toLowerCase();
+    let isSub = false;
+    for (const other of finalSet) {
+      if (other.toLowerCase().includes(lowerIng)) {
+        isSub = true;
+        break;
+      }
+    }
+    if (!isSub) finalSet.add(ing);
+  }
+  
+  if (finalSet.size === 0) return raw.trim();
+  
+  return Array.from(finalSet).reverse().join(", ");
 }
 
 const STORAGE_KEY = "swasthik:history";
