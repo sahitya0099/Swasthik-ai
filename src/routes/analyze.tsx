@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { Upload, Sparkles, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { Upload, Sparkles, Image as ImageIcon, X, Loader2, Search } from "lucide-react";
+import Tesseract from "tesseract.js";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -67,15 +68,39 @@ function AnalyzePage() {
   const [text, setText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const stages = ["Reading ingredients…", "Cross-checking database…", "Scoring health impact…", "Generating insights…"];
 
-  const handleFile = (f: File) => {
+  const handleFile = async (f: File) => {
     const url = URL.createObjectURL(f);
     setImageUrl(url);
+    setError(null);
+    setScanning(true);
+    
+    try {
+      // Use Tesseract.js to extract text from the image
+      const { data: { text: scannedText } } = await Tesseract.recognize(f, 'eng');
+      
+      if (scannedText && scannedText.trim().length > 0) {
+        // Clean up the text: remove extra newlines and normalize
+        const cleaned = scannedText
+          .replace(/\n/g, ", ")
+          .replace(/\s+/g, " ")
+          .trim();
+        setText(cleaned);
+      } else {
+        setError("Could not detect any text in the image. Please try a clearer photo.");
+      }
+    } catch (err) {
+      console.error("OCR Error:", err);
+      setError("Failed to scan the image. Please enter ingredients manually.");
+    } finally {
+      setScanning(false);
+    }
   };
 
   const onAnalyze = async () => {
@@ -184,12 +209,20 @@ function AnalyzePage() {
                 <div className="relative flex items-center gap-3 p-4 rounded-2xl border border-border bg-background">
                   <img src={imageUrl} alt="Uploaded label" className="h-11 w-11 rounded-xl object-cover" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">Image attached</div>
-                    <div className="text-xs text-muted-foreground">Ready for analysis</div>
+                    <div className="font-semibold text-sm truncate">
+                      {scanning ? "Scanning ingredients..." : "Image attached"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {scanning ? "AI is reading the label" : "Ready for analysis"}
+                    </div>
                   </div>
-                  <button onClick={() => setImageUrl(null)} className="p-1 rounded-md hover:bg-muted">
-                    <X className="h-4 w-4" />
-                  </button>
+                  {scanning ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary mr-1" />
+                  ) : (
+                    <button onClick={() => { setImageUrl(null); setText(""); }} className="p-1 rounded-md hover:bg-muted">
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center gap-3 p-4 rounded-2xl border border-border bg-muted/40 text-muted-foreground">
