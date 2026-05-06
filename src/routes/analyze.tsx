@@ -73,7 +73,43 @@ function AnalyzePage() {
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const stages = ["Reading ingredients…", "Cross-checking database…", "Scoring health impact…", "Generating insights…"];
+  const stages = ["Enhancing image...", "Reading ingredients…", "Cross-checking database…", "Scoring health impact…", "Generating insights…"];
+
+  const preprocessImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(URL.createObjectURL(file));
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          // Draw image
+          ctx.drawImage(img, 0, 0);
+          
+          // Simple Preprocessing: Grayscale + High Contrast
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            // Increase contrast: if avg > 128 make it whiter, else blacker
+            const val = avg > 128 ? Math.min(255, avg * 1.2) : avg * 0.8;
+            data[i] = data[i + 1] = data[i + 2] = val;
+          }
+          
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL("image/jpeg", 0.9));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleFile = async (f: File) => {
     const url = URL.createObjectURL(f);
@@ -82,8 +118,13 @@ function AnalyzePage() {
     setScanning(true);
     
     try {
-      // Use Tesseract.js to extract text from the image
-      const { data: { text: scannedText } } = await Tesseract.recognize(f, 'eng');
+      // 1. Image Preprocessing
+      const processedUrl = await preprocessImage(f);
+      
+      // 2. OCR with optimized parameters
+      const { data: { text: scannedText } } = await Tesseract.recognize(processedUrl, 'eng', {
+        tessedit_pageseg_mode: '6' as any, // Assume a single uniform block of text
+      });
       
       if (scannedText && scannedText.trim().length > 0) {
         // Clean up the text using the smart dictionary-based cleaner

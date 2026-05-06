@@ -134,6 +134,26 @@ function capitalize(s: string) {
 }
 
 /**
+ * Calculates the Levenshtein distance between two strings.
+ */
+function levenshtein(a: string, b: string): number {
+  const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+/**
  * Smartly extracts valid ingredients from noisy OCR text.
  */
 export function cleanOcrText(raw: string): string {
@@ -141,49 +161,57 @@ export function cleanOcrText(raw: string): string {
     ...HARMFUL.map(h => h.key),
     ...HEALTHY.map(h => h.key),
     "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper",
-    "vinegar", "lemon juice", "water", "oil", "syrup", "extract", "phosphoric acid", "caramel color", "citric acid", "natural flavors"
+    "vinegar", "lemon juice", "water", "oil", "syrup", "extract", "phosphoric acid", "caramel color", "citric acid", "natural flavors",
+    "onions", "garlic", "salt", "pepper", "olive oil"
   ];
   
   const rawBlocks = raw.split(/[,;\n\r]/);
   const foundIngredients: string[] = [];
   
   for (let block of rawBlocks) {
-    // 1. Basic cleanup: remove symbols and extra whitespace
     let clean = block.replace(/[^a-zA-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
     if (clean.length < 2) continue;
 
     const lowerClean = clean.toLowerCase();
-    let matchesForThisBlock: string[] = [];
+    let bestMatch: { item: string, distance: number } | null = null;
     
-    // 2. Dictionary matching
+    // 1. Direct and Fuzzy Dictionary Matching
     for (const item of dictionary) {
       if (lowerClean.includes(item)) {
-        matchesForThisBlock.push(capitalize(item));
+        bestMatch = { item, distance: 0 };
+        break; 
+      }
+      
+      // Fuzzy matching for short blocks (typo correction)
+      if (lowerClean.length > 3 && item.length > 3) {
+        const dist = levenshtein(lowerClean, item);
+        const threshold = Math.floor(item.length * 0.3); // 30% error tolerance
+        if (dist <= threshold) {
+          if (!bestMatch || dist < bestMatch.distance) {
+            bestMatch = { item, distance: dist };
+          }
+        }
       }
     }
     
-    if (matchesForThisBlock.length > 0) {
-      // Sort by length descending and only keep the longest match to avoid "Syrup" when "Corn Syrup" is present
-      matchesForThisBlock.sort((a, b) => b.length - a.length);
-      foundIngredients.push(matchesForThisBlock[0]);
+    if (bestMatch) {
+      foundIngredients.push(capitalize(bestMatch.item));
     } else {
-      // 3. Heuristic for unknown ingredients
-      // Must have at least 3 letters, at least one vowel, and not be just a string of single letters
+      // 2. Heuristic for unknown ingredients
       const words = clean.split(" ").filter(w => w.length > 1);
       const hasVowel = /[aeiouy]/i.test(clean);
       const letterCount = (clean.match(/[a-zA-Z]/g) || []).length;
       
       if (letterCount > 3 && hasVowel && words.length > 0 && clean.length < 40) {
-        // Additional check: is it just junk like "nb foi"?
         const avgWordLen = letterCount / words.length;
-        if (avgWordLen > 2.5) {
+        if (avgWordLen > 2.8) {
           foundIngredients.push(capitalize(lowerClean));
         }
       }
     }
   }
   
-  // 4. Final deduplication across all blocks
+  // 3. Final deduplication and cleaning
   const finalSet = new Set<string>();
   const sorted = foundIngredients.sort((a, b) => b.length - a.length);
   
