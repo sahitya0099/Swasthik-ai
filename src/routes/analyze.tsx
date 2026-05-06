@@ -92,6 +92,9 @@ function AnalyzePage() {
           ctx.drawImage(img, 0, 0);
           
           // Adaptive Thresholding simulation
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          
           for (let i = 0; i < data.length; i += 4) {
             const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             // Adaptive: If pixel is significantly darker than neighbors, make it black, else white.
