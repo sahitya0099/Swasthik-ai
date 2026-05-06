@@ -66,7 +66,6 @@ function denoise(input: string): string {
     let confirmedMatch = "";
     
     // 2. Strict Whitelist Check
-    // We only accept the block if it contains a known ingredient or is a very high-quality word list
     for (const item of dictionary) {
       if (clean.includes(item)) {
         confirmedMatch = capitalize(item);
@@ -77,27 +76,28 @@ function denoise(input: string): string {
     if (confirmedMatch) {
       finalIngredients.add(confirmedMatch);
     } else {
-      // 3. Ultra-Strict Linguistic Filter for "New" Ingredients
-      // Only keep if it's purely alphabetic, has no single letters, and has a perfect vowel ratio
-      const words = clean.split(" ").filter(w => w.length > 2);
+      // 3. Advanced Fragment Filter
+      const words = clean.split(" ").filter(w => w.length > 0);
       const isPurelyAlpha = /^[a-z ]+$/.test(clean);
       const letterCount = clean.replace(/\s/g, "").length;
       
       if (isPurelyAlpha && words.length > 0 && letterCount > 4) {
+        // Calculate word-length quality
+        const shortWords = words.filter(w => w.length <= 2).length;
+        const shortWordRatio = shortWords / words.length;
+        const avgWordLen = letterCount / words.length;
+        
+        // If more than 40% of words are tiny (junk), or avg length is poor, discard.
+        if (shortWordRatio > 0.4 || avgWordLen < 3.8) {
+          continue; 
+        }
+
         const vowels = (clean.match(/[aeiouy]/g) || []).length;
         const vowelRatio = vowels / letterCount;
-        
-        // Very strict vowel ratio for English words (30% to 50%)
-        // Also ensure words don't have too many repeating characters (junk check)
         const hasRepeatingJunk = /(.)\1\1/.test(clean); 
         
-        if (vowelRatio >= 0.3 && vowelRatio <= 0.5 && !hasRepeatingJunk) {
-          // One final check: does it look like a real ingredient or just a fragment?
-          // If it has too many words but is short, it's likely junk like "Ar cece on"
-          const avgWordLen = letterCount / words.length;
-          if (avgWordLen >= 4) {
-            finalIngredients.add(capitalize(clean));
-          }
+        if (vowelRatio >= 0.25 && vowelRatio <= 0.55 && !hasRepeatingJunk) {
+          finalIngredients.add(capitalize(clean));
         }
       }
     }
