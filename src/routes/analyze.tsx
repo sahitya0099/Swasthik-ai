@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { saveHistory, type AnalysisResult, type RiskFlag, type IngredientInsight, type Verdict } from "@/lib/analysis";
+import { saveHistory, cleanOcrText, type AnalysisResult, type RiskFlag, type IngredientInsight, type Verdict } from "@/lib/analysis";
 
 type ApiDetail = { ingredient: string; category: "good" | "moderate" | "harmful" | "unknown"; effect: string };
 type ApiResponse = { score: number; verdict: Verdict; risks: string[]; details: ApiDetail[] };
@@ -86,11 +86,8 @@ function AnalyzePage() {
       const { data: { text: scannedText } } = await Tesseract.recognize(f, 'eng');
       
       if (scannedText && scannedText.trim().length > 0) {
-        // Clean up the text: remove extra newlines and normalize
-        const cleaned = scannedText
-          .replace(/\n/g, ", ")
-          .replace(/\s+/g, " ")
-          .trim();
+        // Clean up the text using the smart dictionary-based cleaner
+        const cleaned = cleanOcrText(scannedText);
         setText(cleaned);
       } else {
         setError("Could not detect any text in the image. Please try a clearer photo.");

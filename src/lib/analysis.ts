@@ -56,6 +56,16 @@ const HEALTHY = [
   { key: "ginger", note: "Digestive benefits." },
   { key: "yogurt", note: "Probiotic, good for gut health." },
   { key: "tomato", note: "Lycopene-rich antioxidant." },
+  { key: "lettuce", note: "Low-calorie leafy green." },
+  { key: "cucumber", note: "Hydrating and low-calorie." },
+  { key: "red onion", note: "Contains heart-healthy quercetin." },
+  { key: "bell pepper", note: "Excellent source of Vitamin C." },
+  { key: "feta cheese", note: "Good protein but high in sodium." },
+  { key: "olive oil", note: "Heart-healthy monounsaturated fat." },
+  { key: "olives", note: "Healthy fats and antioxidants." },
+  { key: "garlic", note: "Anti-inflammatory properties." },
+  { key: "lemon", note: "High in Vitamin C." },
+  { key: "black pepper", note: "Antioxidant properties." },
 ];
 
 export function analyzeIngredients(input: string): AnalysisResult {
@@ -121,6 +131,38 @@ function buildRecs(verdict: Verdict, risks: RiskFlag[]): string[] {
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Smartly extracts valid ingredients from noisy OCR text.
+ */
+export function cleanOcrText(raw: string): string {
+  const dictionary = [
+    ...HARMFUL.map(h => h.key),
+    ...HEALTHY.map(h => h.key),
+    "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper"
+  ];
+  
+  const text = raw.toLowerCase();
+  const found = new Set<string>();
+  
+  // Look for dictionary matches in the raw text
+  for (const item of dictionary) {
+    if (text.includes(item)) {
+      found.add(capitalize(item));
+    }
+  }
+  
+  // If no dictionary matches, try to filter the raw text by removing non-alphabetic noise
+  if (found.size === 0) {
+    return raw
+      .split(/[,;\n]/)
+      .map(s => s.replace(/[^a-zA-Z ]/g, "").trim())
+      .filter(s => s.length > 2)
+      .join(", ");
+  }
+  
+  return Array.from(found).join(", ");
 }
 
 const STORAGE_KEY = "swasthik:history";
