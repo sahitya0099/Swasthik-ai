@@ -50,20 +50,22 @@ function denoise(input: string): string {
     "water", "high fructose corn syrup", "corn syrup", "sugar", "salt", "black olives", "feta cheese",
     "lettuce", "tomato", "cherry tomatoes", "cucumber", "red onion", "bell pepper", "olive oil",
     "citric acid", "phosphoric acid", "caramel color", "natural flavors", "caffeine", "potassium sorbate", "sodium benzoate",
-    "vinegar", "lemon juice", "garlic", "onions", "pepper", "oregano", "basil", "extract", "yeast"
+    "vinegar", "lemon juice", "garlic", "onions", "pepper", "oregano", "basil", "extract", "yeast",
+    "oreo cookie crumbs", "cheesecake", "whipped cream", "chocolate sauce", "filling", "cream", "milk", "wheat", "flour"
   ];
 
   const blocks = input.split(/[,;\n\r]/);
   const results = new Set<string>();
 
   for (let block of blocks) {
+    // 1. Aggressive Noise Stripping
     const clean = block.replace(/[^a-zA-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
-    if (clean.length < 2) continue;
+    if (clean.length < 3) continue;
 
+    // 2. High-Confidence Dictionary Matching
     let bestMatch = "";
     let maxOverlap = 0;
 
-    // Check for substrings or high-overlap matches
     for (const item of dictionary) {
       if (clean.includes(item)) {
         if (item.length > maxOverlap) {
@@ -73,22 +75,45 @@ function denoise(input: string): string {
       }
     }
 
-    if (bestMatch) {
+    if (bestMatch && maxOverlap >= 4) {
       results.add(capitalize(bestMatch));
     } else {
-      // If no dictionary match, use a word-density check to keep potentially new ingredients
+      // 3. Stricter Heuristic for "Unknown" but potentially valid text
       const words = clean.split(" ").filter(w => w.length > 2);
-      if (words.length > 0 && clean.length < 35) {
-        // Only keep if it doesn't look like gibberish (vowel density check)
+      const letterCount = (clean.match(/[a-zA-Z]/g) || []).length;
+      const spaceCount = (clean.match(/\s/g) || []).length;
+      
+      // If it has too many spaces relative to letters, it's probably noise like "G at m ree ry she"
+      const noiseRatio = spaceCount / (letterCount + 1);
+      
+      if (letterCount > 5 && noiseRatio < 0.35 && clean.length < 40) {
+        // Vowel density check (real words usually have 20-50% vowels)
         const vowels = (clean.match(/[aeiouy]/g) || []).length;
-        if (vowels / clean.length > 0.2) {
+        const vowelRatio = vowels / letterCount;
+        
+        if (vowelRatio > 0.25 && vowelRatio < 0.6) {
           results.add(capitalize(clean));
         }
       }
     }
   }
 
-  return Array.from(results).join(", ");
+  // 4. Final Substring Deduplication (e.g. keep "Oreo cookie crumbs" over "Oreo")
+  const finalArray = Array.from(results).sort((a, b) => b.length - a.length);
+  const deduplicated = new Set<string>();
+  
+  for (const item of finalArray) {
+    let isSubset = false;
+    for (const existing of deduplicated) {
+      if (existing.toLowerCase().includes(item.toLowerCase())) {
+        isSubset = true;
+        break;
+      }
+    }
+    if (!isSubset) deduplicated.add(item);
+  }
+
+  return Array.from(deduplicated).join(", ");
 }
 
 function capitalize(s: string) {
