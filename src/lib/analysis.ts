@@ -43,6 +43,7 @@ const HARMFUL = [
   { key: "milk", note: "Common allergen — dairy.", penalty: 3, severity: "low" as const, flag: "Allergen: Dairy" },
   { key: "soy", note: "Common allergen — soy.", penalty: 3, severity: "low" as const, flag: "Allergen: Soy" },
   { key: "peanut", note: "Severe allergen for some.", penalty: 4, severity: "medium" as const, flag: "Allergen: Peanut" },
+  { key: "caffeine", note: "Stimulant that can affect sleep and heart rate.", penalty: 5, severity: "low" as const, flag: "Contains Caffeine" },
 ];
 
 const HEALTHY = [
@@ -162,7 +163,7 @@ export function cleanOcrText(raw: string): string {
     ...HEALTHY.map(h => h.key),
     "cherry tomatoes", "salt", "pepper", "black olives", "feta cheese", "yellow bell pepper", "red bell pepper",
     "vinegar", "lemon juice", "water", "oil", "syrup", "extract", "phosphoric acid", "caramel color", "citric acid", "natural flavors",
-    "onions", "garlic", "salt", "pepper", "olive oil"
+    "onions", "garlic", "salt", "pepper", "olive oil", "caffeine", "sugar", "fructose", "sucrose", "potassium", "sorbate", "benzoate"
   ];
   
   const rawBlocks = raw.split(/[,;\n\r]/);
@@ -177,18 +178,22 @@ export function cleanOcrText(raw: string): string {
     
     // 1. Direct and Fuzzy Dictionary Matching
     for (const item of dictionary) {
+      // Check if the block contains the item (even as part of a larger noisy word)
       if (lowerClean.includes(item)) {
         bestMatch = { item, distance: 0 };
         break; 
       }
       
-      // Fuzzy matching for short blocks (typo correction)
-      if (lowerClean.length > 3 && item.length > 3) {
-        const dist = levenshtein(lowerClean, item);
-        const threshold = Math.floor(item.length * 0.3); // 30% error tolerance
-        if (dist <= threshold) {
-          if (!bestMatch || dist < bestMatch.distance) {
-            bestMatch = { item, distance: dist };
+      // Fuzzy matching for standalone words in the block
+      const wordsInBlock = lowerClean.split(" ");
+      for (const word of wordsInBlock) {
+        if (word.length > 3 && item.length > 3) {
+          const dist = levenshtein(word, item);
+          const threshold = Math.floor(item.length * 0.35); // Slightly higher tolerance
+          if (dist <= threshold) {
+            if (!bestMatch || dist < bestMatch.distance) {
+              bestMatch = { item, distance: dist };
+            }
           }
         }
       }
