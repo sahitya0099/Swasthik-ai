@@ -66,6 +66,19 @@ export const INGREDIENT_DB: IngredientInfo[] = [
   { name: "natural flavor", category: "moderate", healthEffect: "Derived from natural sources but still highly processed in labs.", riskLevel: "low", aliases: ["natural flavors", "natural flavouring", "natural flavorings"] },
   { name: "sodium benzoate", category: "harmful", healthEffect: "A common preservative that may cause hyperactivity in some children.", riskLevel: "medium", riskFlag: "Sodium benzoate" },
 
+  // Kurkure / Snack Additions
+  { name: "cereal products rice meal", category: "moderate", healthEffect: "Refined grain product; lower in fiber compared to whole grains.", riskLevel: "medium", aliases: ["rice meal"] },
+  { name: "identical flavouring substances", category: "moderate", healthEffect: "Synthetic flavors chemically identical to natural ones.", riskLevel: "low", aliases: ["ldentical flavouring substances", "nature identical flavouring substances"] },
+  { name: "flavour natural and nature", category: "moderate", healthEffect: "Combination of natural and lab-made flavorings.", riskLevel: "low" },
+  { name: "dehydrated fenugreek", category: "good", healthEffect: "Herb that may aid digestion and blood sugar control.", riskLevel: "low" },
+  { name: "spices condiments", category: "good", healthEffect: "Adds flavor and often contains antioxidants.", riskLevel: "low", aliases: ["spices", "condiments"] },
+  { name: "flavour enhancers", category: "moderate", healthEffect: "Used to boost taste; some individuals may be sensitive.", riskLevel: "medium", aliases: ["flavor enhancers", "flavor enhancer", "flavour enhancer"] },
+  { name: "maltodextrin", category: "moderate", healthEffect: "Highly processed carbohydrate with a high glycemic index.", riskLevel: "medium", riskFlag: "High glycemic index" },
+  { name: "regulators", category: "moderate", healthEffect: "Food additives used to change or maintain pH.", riskLevel: "low", aliases: ["acidity regulators", "acidity regulator", "regulator"] },
+  { name: "seasoning", category: "moderate", healthEffect: "Mix of spices and salt to enhance flavor; often high in sodium.", riskLevel: "medium", aliases: ["geasoning", "seasonings"] },
+  { name: "gram meal", category: "good", healthEffect: "Also known as besan or chickpea flour; high in protein and fiber.", riskLevel: "low", aliases: ["besan", "chickpea flour"] },
+  { name: "extract", category: "moderate", healthEffect: "Concentrated flavoring or natural substance.", riskLevel: "low" },
+
   // Nutritional Headers & Macros (to avoid 'unknown' flags)
   { name: "protein", category: "good", healthEffect: "Essential for muscle repair and growth.", riskLevel: "low" },
   { name: "fat", category: "moderate", healthEffect: "Source of energy; quality matters (prefer unsaturated).", riskLevel: "low" },
